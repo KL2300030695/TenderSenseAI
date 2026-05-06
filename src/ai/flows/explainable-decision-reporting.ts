@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview This file implements a Genkit flow for Explainable Decision Reporting in TenderSense AI.
@@ -140,6 +139,8 @@ Provide Criterion, Required Value, Bidder Value, Status, Confidence, Explanation
 --------------------------------------------------
 OUTPUT FORMAT (STRICT JSON ONLY)
 --------------------------------------------------
+Your entire response MUST be a single JSON object conforming exactly to the following schema. DO NOT include any additional text or formatting outside of the JSON object.
+
 {{jsonSchema ExplainableDecisionReportingOutputSchema}}`,
 });
 
