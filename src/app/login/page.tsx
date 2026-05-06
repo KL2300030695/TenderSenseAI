@@ -69,8 +69,9 @@ export default function LoginPage() {
     console.error("Auth error:", error);
     let description = error.message || "Failed to sign in. Please try again.";
     
+    // Explicitly handle the operation-not-allowed error to guide the user
     if (error.code === 'auth/operation-not-allowed') {
-      description = "This sign-in method is not enabled. Please enable it in the Firebase Console (Authentication > Sign-in method).";
+      description = "This sign-in method is not enabled. Please go to the Firebase Console > Authentication > Sign-in method and enable Google, Email/Password, or Anonymous sign-in.";
     }
 
     toast({
