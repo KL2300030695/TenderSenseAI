@@ -1,3 +1,4 @@
+
 "use client"
 
 import {useState, useRef} from "react"
@@ -34,6 +35,8 @@ import {
 } from "lucide-react"
 import {useToast} from "@/hooks/use-toast"
 import {explainableDecisionReporting} from "@/ai/flows/explainable-decision-reporting"
+import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
+import { collection, doc } from "firebase/firestore"
 
 type InputType = 'pdf' | 'text' | 'url';
 
@@ -56,6 +59,8 @@ export default function NewEvaluationPage() {
   
   const router = useRouter()
   const {toast} = useToast()
+  const db = useFirestore()
+  const { user } = useUser()
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -98,15 +103,49 @@ export default function NewEvaluationPage() {
         bidderDoc: bidderInput,
       })
       
+      // Store in SessionStorage for immediate report viewing
       sessionStorage.setItem('last_evaluation', JSON.stringify({
         name: tenderName,
         result: result,
         timestamp: new Date().toISOString()
       }))
 
+      // Persist to Firestore if db is available
+      if (db) {
+        const timestamp = new Date().toISOString();
+        const tenderRef = collection(db, "tenders");
+        const evaluationRef = collection(db, "tenderEvaluationSummaries");
+
+        // Save Tender metadata
+        const tenderData = {
+          title: tenderName,
+          referenceNumber: `TR-${Math.floor(Math.random() * 10000)}`,
+          status: "Active",
+          createdDateTime: timestamp,
+          publicationDate: timestamp,
+          submissionDeadline: timestamp, // In real app, this would be extracted
+          description: "AI-Generated Evaluation Result"
+        };
+
+        addDocumentNonBlocking(tenderRef, tenderData).then((docRef) => {
+           if (docRef) {
+             // Save Evaluation Summary
+             const summaryData = {
+               tenderId: docRef.id,
+               bidderId: user?.uid || "anonymous",
+               overallDecision: result.summary.final_decision,
+               summaryReason: result.summary.reason,
+               riskFlags: result.summary.risk_flags,
+               evaluationDateTime: timestamp
+             };
+             addDocumentNonBlocking(evaluationRef, summaryData);
+           }
+        });
+      }
+
       toast({
-        title: "Processing Complete",
-        description: "AI has successfully evaluated the PDF submissions.",
+        title: "Evaluation Saved",
+        description: "Your results have been synced to the database.",
       })
       
       router.push("/tenders/report")
