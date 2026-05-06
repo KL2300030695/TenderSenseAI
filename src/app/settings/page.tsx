@@ -19,16 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Settings, Shield, Bell, Database, Save, Loader2 } from "lucide-react";
+import { Settings, Shield, Bell, Database, Save, Loader2, Copy, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from '@/firebase';
 
 export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
 
   const handleSave = () => {
     setIsSaving(true);
-    // Simulate API call
     setTimeout(() => {
       setIsSaving(false);
       toast({
@@ -38,8 +40,20 @@ export default function SettingsPage() {
     }, 1000);
   };
 
+  const copyUid = () => {
+    if (user?.uid) {
+      navigator.clipboard.writeText(user.uid);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({
+        title: "UID Copied",
+        description: "User ID copied to clipboard for admin setup.",
+      });
+    }
+  };
+
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-4xl mx-auto pb-20">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold text-primary flex items-center gap-3">
           <Settings className="h-8 w-8" />
@@ -49,6 +63,31 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6">
+        {/* Identity Card */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Database className="h-5 w-5 text-primary" />
+              Developer & Admin Identity
+            </CardTitle>
+            <CardDescription>Use this ID to grant yourself administrative roles in the Firebase Console.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase text-muted-foreground">Your User ID (UID)</Label>
+              <div className="flex gap-2">
+                <Input value={user?.uid || "Loading..."} readOnly className="font-mono bg-background" />
+                <Button variant="outline" size="icon" onClick={copyUid}>
+                  {copied ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Create a document at <strong>/roles_admin/{user?.uid}</strong> in Firestore to enable Admin features.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -106,37 +145,6 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground">Get notified about unauthorized access attempts.</p>
               </div>
               <Switch defaultChecked />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-primary" />
-              Data Retention
-            </CardTitle>
-            <CardDescription>Manage your Firestore audit logs.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Auto-Archive History</Label>
-              <Select defaultValue="90">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">After 30 days</SelectItem>
-                  <SelectItem value="90">After 90 days</SelectItem>
-                  <SelectItem value="365">After 1 year</SelectItem>
-                  <SelectItem value="never">Never archive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>System API Key</Label>
-              <Input type="password" value="••••••••••••••••" readOnly />
-              <p className="text-[10px] text-muted-foreground">Used for external procurement system integrations.</p>
             </div>
           </CardContent>
         </Card>
