@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -13,11 +16,47 @@ import {
   TrendingUp,
   PlusCircle,
   ShieldCheck,
+  Loader2,
 } from "lucide-react"
 import {Button} from "@/components/ui/button"
 import Link from "next/link"
+import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
+import { collection, query, orderBy, limit } from "firebase/firestore"
 
 export default function DashboardPage() {
+  const db = useFirestore();
+
+  // Fetch all tenders to count active ones
+  const tendersQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return collection(db, "tenders");
+  }, [db]);
+
+  // Fetch recent summaries for the "Recent Evaluations" list
+  const summariesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, "tenderEvaluationSummaries"), orderBy("evaluationDateTime", "desc"), limit(5));
+  }, [db]);
+
+  // Fetch all summaries to calculate statistics
+  const allSummariesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return collection(db, "tenderEvaluationSummaries");
+  }, [db]);
+
+  const { data: tenders, isLoading: loadingTenders } = useCollection(tendersQuery);
+  const { data: recentSummaries, isLoading: loadingRecent } = useCollection(summariesQuery);
+  const { data: allSummaries, isLoading: loadingAll } = useCollection(allSummariesQuery);
+
+  const stats = {
+    activeTenders: tenders?.filter(t => t.status === 'Active').length || 0,
+    eligible: allSummaries?.filter(s => s.overallDecision === 'Eligible').length || 0,
+    rejected: allSummaries?.filter(s => s.overallDecision === 'Not Eligible').length || 0,
+    needsReview: allSummaries?.filter(s => s.overallDecision === 'Needs Review').length || 0,
+  };
+
+  const isLoading = loadingTenders || loadingRecent || loadingAll;
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col gap-2">
@@ -33,8 +72,8 @@ export default function DashboardPage() {
             <FileText className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
+            <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : stats.activeTenders}</div>
+            <p className="text-xs text-muted-foreground">Live from database</p>
           </CardContent>
         </Card>
         <Card className="hover:shadow-md transition-shadow">
@@ -43,8 +82,8 @@ export default function DashboardPage() {
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">48</div>
-            <p className="text-xs text-muted-foreground">72% success rate</p>
+            <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : stats.eligible}</div>
+            <p className="text-xs text-muted-foreground">Successfully evaluated</p>
           </CardContent>
         </Card>
         <Card className="hover:shadow-md transition-shadow">
@@ -53,8 +92,8 @@ export default function DashboardPage() {
             <XCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">14</div>
-            <p className="text-xs text-muted-foreground">-5% improvement</p>
+            <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : stats.rejected}</div>
+            <p className="text-xs text-muted-foreground">Did not meet criteria</p>
           </CardContent>
         </Card>
         <Card className="hover:shadow-md transition-shadow">
@@ -63,7 +102,7 @@ export default function DashboardPage() {
             <AlertCircle className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">7</div>
+            <div className="text-2xl font-bold">{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : stats.needsReview}</div>
             <p className="text-xs text-muted-foreground">Requires attention</p>
           </CardContent>
         </Card>
@@ -73,33 +112,40 @@ export default function DashboardPage() {
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Recent Evaluations</CardTitle>
-            <CardDescription>Bidders processed in the last 24 hours.</CardDescription>
+            <CardDescription>Latest bidders processed in real-time.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { name: "BuildTech Solutions", tender: "Smart City Infrastructure", status: "Eligible", date: "2h ago" },
-                { name: "Global Power Corp", tender: "Renewable Energy Grid", status: "Needs Review", date: "5h ago" },
-                { name: "SafeWay Logistics", tender: "Public Transport Maintenance", status: "Rejected", date: "1d ago" },
-                { name: "Indra Construction", tender: "Smart City Infrastructure", status: "Eligible", date: "1d ago" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border">
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{item.name}</span>
-                    <span className="text-xs text-muted-foreground">{item.tender}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      item.status === 'Eligible' ? 'bg-green-100 text-green-700' :
-                      item.status === 'Rejected' ? 'bg-red-100 text-red-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {item.status}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{item.date}</span>
-                  </div>
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ))}
+              ) : !recentSummaries || recentSummaries.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8 italic">No evaluations yet.</p>
+              ) : (
+                recentSummaries.map((item) => {
+                   const tender = tenders?.find(t => t.id === item.tenderId);
+                   const dateStr = item.evaluationDateTime ? new Date(item.evaluationDateTime).toLocaleDateString() : 'Recently';
+                   return (
+                    <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border">
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{tender?.title || 'Processed Evaluation'}</span>
+                        <span className="text-xs text-muted-foreground">ID: {item.id.substring(0, 8)}...</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          item.overallDecision === 'Eligible' ? 'bg-green-100 text-green-700' :
+                          item.overallDecision === 'Not Eligible' ? 'bg-red-100 text-red-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {item.overallDecision}
+                        </span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">{dateStr}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>
@@ -133,7 +179,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-sm font-semibold text-primary">AI Optimization Tip</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Evaluations are 30% more accurate when bidders upload high-quality, text-searchable PDFs.
+                  Evaluations are 30% more accurate when using high-quality PDF source documents.
                 </p>
               </div>
             </div>
