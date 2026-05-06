@@ -3,12 +3,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser, initiateGoogleSignIn, initiateEmailSignIn, initiateEmailSignUp } from '@/firebase';
+import { useAuth, useUser, initiateGoogleSignIn, initiateEmailSignIn, initiateEmailSignUp, initiateAnonymousSignIn } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, Loader2, Mail } from 'lucide-react';
+import { ShieldCheck, Loader2, Mail, UserCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
@@ -38,11 +38,7 @@ export default function LoginPage() {
         initiateEmailSignIn(auth, email, password);
       }
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Authentication Error",
-        description: error.message || "Failed to sign in. Please try again.",
-      });
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
@@ -53,12 +49,35 @@ export default function LoginPage() {
     try {
       initiateGoogleSignIn(auth);
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Google Sign-In Error",
-        description: error.message || "Could not initialize Google sign-in.",
-      });
+      handleAuthError(error);
     }
+  };
+
+  const handleAnonymousSignIn = () => {
+    if (!auth) return;
+    setLoading(true);
+    try {
+      initiateAnonymousSignIn(auth);
+    } catch (error: any) {
+      handleAuthError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuthError = (error: any) => {
+    console.error("Auth error:", error);
+    let description = error.message || "Failed to sign in. Please try again.";
+    
+    if (error.code === 'auth/operation-not-allowed') {
+      description = "This sign-in method is not enabled. Please enable it in the Firebase Console (Authentication > Sign-in method).";
+    }
+
+    toast({
+      variant: "destructive",
+      title: "Authentication Error",
+      description: description,
+    });
   };
 
   if (isUserLoading) {
@@ -83,7 +102,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4">
-            <Button variant="outline" className="h-11 gap-2" onClick={handleGoogleSignIn}>
+            <Button variant="outline" className="h-11 gap-2" onClick={handleGoogleSignIn} disabled={loading}>
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -104,6 +123,12 @@ export default function LoginPage() {
               </svg>
               Continue with Google
             </Button>
+            
+            <Button variant="secondary" className="h-11 gap-2" onClick={handleAnonymousSignIn} disabled={loading}>
+              <UserCircle className="h-4 w-4" />
+              Continue as Guest
+            </Button>
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -112,6 +137,7 @@ export default function LoginPage() {
                 <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
               </div>
             </div>
+            
             <form onSubmit={handleEmailAuth} className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
