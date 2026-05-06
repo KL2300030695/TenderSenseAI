@@ -9,7 +9,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 /**
- * Tool to simulate fetching content from a URL.
+ * Tool to fetch content from a URL.
  */
 const fetchUrlContent = ai.defineTool(
   {
@@ -21,10 +21,21 @@ const fetchUrlContent = ai.defineTool(
     outputSchema: z.string(),
   },
   async (input) => {
-    // In a production environment, this would use a library like 'axios' and 'cheerio' 
-    // or a dedicated scraping service to extract text from the webpage.
-    // For this prototype, we return a simulated response if it's a URL.
-    return `Simulated content fetched from ${input.url}. This document contains standard eligibility requirements including an annual turnover of at least ₹5 crore and ISO 9001 certification.`;
+    try {
+      const response = await fetch(input.url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const html = await response.text();
+      // Very basic text extraction from HTML by stripping tags and cleaning whitespace
+      const cleanText = html
+        .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, '')
+        .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gm, '')
+        .replace(/<[^>]*>?/gm, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return cleanText.substring(0, 15000); // Return a reasonable chunk
+    } catch (e) {
+      return `Failed to fetch content from ${input.url}. Error: ${e instanceof Error ? e.message : 'Unknown error'}`;
+    }
   }
 );
 
@@ -104,7 +115,7 @@ Tender Document:
 {{media url=tenderDoc.value}}
 {{else}}
 {{#if isTenderUrl}}
-URL: {{{tenderDoc.value}}} (Use fetchUrlContent)
+URL Content (Retrieve using tool): {{{tenderDoc.value}}}
 {{else}}
 {{{tenderDoc.value}}}
 {{/if}}
@@ -115,7 +126,7 @@ Bidder Document:
 {{media url=bidderDoc.value}}
 {{else}}
 {{#if isBidderUrl}}
-URL: {{{bidderDoc.value}}} (Use fetchUrlContent)
+URL Content (Retrieve using tool): {{{bidderDoc.value}}}
 {{else}}
 {{{bidderDoc.value}}}
 {{/if}}
