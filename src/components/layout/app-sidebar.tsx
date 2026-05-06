@@ -93,15 +93,19 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Search">
-                  <Search />
-                  <span>Search Docs</span>
+                <SidebarMenuButton asChild isActive={pathname === "/search"} tooltip="Search">
+                  <Link href="/search">
+                    <Search />
+                    <span>Search Docs</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings">
-                  <Settings />
-                  <span>Settings</span>
+                <SidebarMenuButton asChild isActive={pathname === "/settings"} tooltip="Settings">
+                  <Link href="/settings">
+                    <Settings />
+                    <span>Settings</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
