@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview This file implements a Genkit flow for Explainable Decision Reporting in TenderSense AI.
- * It extracts eligibility criteria from a tender document (PDF), extracts bidder data from a bidder document (PDF),
+ * It extracts eligibility criteria from a tender document (PDF or Text), extracts bidder data,
  * evaluates the bidder against the tender criteria, and generates a detailed, auditable report.
  *
  * - explainableDecisionReporting - The main function to trigger the tender evaluation process.
@@ -13,20 +13,19 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 /**
+ * Schema for a document input, which can be a PDF URI or raw text.
+ */
+const DocumentInputSchema = z.object({
+  type: z.enum(['pdf', 'text', 'url']),
+  value: z.string().describe("The content (text, URL) or a data URI for PDF."),
+});
+
+/**
  * Schema for the input of the explainableDecisionReporting flow.
- * It includes the PDF documents as base64 data URIs.
  */
 const ExplainableDecisionReportingInputSchema = z.object({
-  tenderPdfUri: z
-    .string()
-    .describe(
-      "The tender document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:application/pdf;base64,<encoded_data>'."
-    ),
-  bidderPdfUri: z
-    .string()
-    .describe(
-      "The bidder document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:application/pdf;base64,<encoded_data>'."
-    ),
+  tenderDoc: DocumentInputSchema,
+  bidderDoc: DocumentInputSchema,
 });
 export type ExplainableDecisionReportingInput = z.infer<typeof ExplainableDecisionReportingInputSchema>;
 
@@ -73,7 +72,6 @@ const SummarySchema = z.object({
 
 /**
  * Schema for the output of the explainable decision reporting flow.
- * This structure provides a complete, accurate, and explainable tender evaluation.
  */
 const ExplainableDecisionReportingOutputSchema = z.object({
   criteria: z.array(CriterionSchema).describe('A list of all extracted eligibility criteria from the tender document.'),
@@ -84,7 +82,6 @@ export type ExplainableDecisionReportingOutput = z.infer<typeof ExplainableDecis
 
 /**
  * Defines the prompt for the explainable decision reporting AI.
- * This prompt guides the LLM through a multi-step process to perform a comprehensive tender evaluation.
  */
 const explainableDecisionReportingPrompt = ai.definePrompt({
   name: 'explainableDecisionReportingPrompt',
@@ -92,111 +89,67 @@ const explainableDecisionReportingPrompt = ai.definePrompt({
   output: {schema: ExplainableDecisionReportingOutputSchema},
   prompt: `You are an expert AI system designed for government-grade tender evaluation and audit. Your goal is to perform a COMPLETE, ACCURATE, and EXPLAINABLE evaluation of a bidder's submission against a tender document.
 
-You will receive the PDF content of both a tender document and a bidder document.
-
 Follow these steps strictly to produce your evaluation:
 
 --------------------------------------------------
 STEP 1: CRITERIA EXTRACTION (TENDER UNDERSTANDING)
 --------------------------------------------------
 From the Tender Document provided, extract ALL eligibility criteria.
-
-For each criterion:
 - Identify the requirement clearly.
 - Extract exact values (e.g., ₹5 crore, 3 projects, ISO 9001).
-- Classify into one of these types: Technical, Financial, Compliance.
-- Determine if it's Mandatory (default TRUE unless clearly optional) or Optional (only if explicitly mentioned as optional).
-- Also extract: Required documents (certificates, registrations) and Time constraints (e.g., last 5 years). Include these in the 'notes' field.
+- Classify: Technical, Financial, Compliance.
+- Determine if it's Mandatory (default TRUE) or Optional.
 
 Tender Document:
-{{media url=tenderPdfUri}}
+{{#if (eq tenderDoc.type 'pdf')}}
+{{media url=tenderDoc.value}}
+{{else}}
+{{{tenderDoc.value}}}
+{{/if}}
 
 --------------------------------------------------
 STEP 2: BIDDER DATA EXTRACTION
 --------------------------------------------------
 From the Bidder Document provided, extract structured data relevant to the criteria identified in Step 1.
 
-Extract:
-- Annual turnover (with amount and year if available)
-- Certifications (ISO, etc.)
-- Number of similar projects
-- Company registrations (GST, PAN, etc.)
-- Any supporting evidence text for each criterion.
-
-For each extracted value:
-- Include the EXACT text snippet from the document as evidence in the 'bidder_text' field within the 'evidence' object. If a page reference is available in the original document, include that context; otherwise, include the most relevant sentence.
-
 Bidder Document:
-{{media url=bidderPdfUri}}
+{{#if (eq bidderDoc.type 'pdf')}}
+{{media url=bidderDoc.value}}
+{{else}}
+{{{bidderDoc.value}}}
+{{/if}}
 
 --------------------------------------------------
 STEP 3: MATCHING & EVALUATION
 --------------------------------------------------
-For EACH criterion extracted in Step 1, compare the 'required_value' (from tender) with the corresponding 'bidder_value' (extracted from bidder document in Step 2).
-
-Assign status for each criterion:
-- "Eligible" → if the bidder fully satisfies the requirement.
-- "Not Eligible" → if the bidder clearly fails the requirement.
-- "Needs Review" → if data is missing, unclear, or ambiguous.
-
-STRICT RULES for evaluation:
-- NEVER assume missing data.
-- NEVER guess values.
-- If evidence is weak or insufficient → mark "Needs Review".
+Compare requirements with bidder data.
+- "Eligible" if satisfied.
+- "Not Eligible" if failed.
+- "Needs Review" if ambiguous.
 
 --------------------------------------------------
 STEP 4: EXPLAINABILITY (CRITICAL)
 --------------------------------------------------
 For EVERY evaluation, provide:
-- Criterion name
-- Required value
-- Bidder value
-- Status
-- Confidence score (0–100) reflecting your certainty of the evaluation.
-- Explanation: A clear, human-readable explanation answering "WHY did this decision happen?".
-- Evidence:
-  • Exact sentence or snippet from bidder document ('bidder_text').
-  • (Optional) relevant sentence or snippet from tender document ('tender_text') for context.
+- Criterion, Required Value, Bidder Value, Status, Confidence.
+- Explanation: "WHY did this decision happen?".
+- Evidence: Exact snippets from both documents.
 
 --------------------------------------------------
-STEP 5: RISK & FLAGS
+STEP 5: RISK & FINAL SUMMARY
 --------------------------------------------------
-Detect and flag:
-- Missing documents
-- Incomplete information
-- Suspicious inconsistencies
-- OCR/low-confidence extraction issues
-List these as strings in the 'risk_flags' array within the summary.
-
---------------------------------------------------
-STEP 6: FINAL SUMMARY
---------------------------------------------------
-Provide:
-- Overall decision: "Eligible", "Not Eligible", or "Needs Review".
-- Summary reasoning: 2–3 lines explaining the overall decision.
-- Risk flags: Any identified risks from Step 5.
+Flag missing documents or inconsistencies. Provide an overall final decision.
 
 --------------------------------------------------
 OUTPUT FORMAT (STRICT JSON ONLY)
 --------------------------------------------------
-Your entire response MUST be a single JSON object conforming exactly to this schema. DO NOT include any additional text or formatting outside of the JSON object.
+Your response MUST be a single JSON object.
 
-{{jsonSchema ExplainableDecisionReportingOutputSchema}}
-
---------------------------------------------------
-IMPORTANT CONSTRAINTS
---------------------------------------------------
-- DO NOT hallucinate missing values.
-- DO NOT skip any criterion.
-- ALWAYS include explanation and evidence for each evaluation.
-- BE STRICT and AUDIT-READY.
-- If unsure about any aspect, especially due to lack of clear evidence, mark "Needs Review".`,
+{{jsonSchema ExplainableDecisionReportingOutputSchema}}`,
 });
 
 /**
  * Defines the Genkit flow for explainable decision reporting.
- * This flow uses the defined prompt to process tender and bidder documents
- * and generate a structured evaluation report.
  */
 const explainableDecisionReportingFlow = ai.defineFlow(
   {
@@ -205,18 +158,11 @@ const explainableDecisionReportingFlow = ai.defineFlow(
     outputSchema: ExplainableDecisionReportingOutputSchema,
   },
   async (input) => {
-    // Call the prompt with the input documents to get the structured evaluation output.
     const {output} = await explainableDecisionReportingPrompt(input);
-    // The prompt is designed to return the exact output schema, so we can directly return it.
     return output!;
   }
 );
 
-/**
- * Wrapper function to trigger the explainable decision reporting flow.
- * @param input The tender and bidder document texts.
- * @returns A promise that resolves to the structured evaluation report.
- */
 export async function explainableDecisionReporting(
   input: ExplainableDecisionReportingInput
 ): Promise<ExplainableDecisionReportingOutput> {
