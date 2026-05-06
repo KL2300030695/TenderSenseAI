@@ -1,0 +1,740 @@
+{
+  "entities": {
+    "Tender": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Tender",
+      "type": "object",
+      "description": "Represents a government tender document published for bids, including its metadata and status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Tender entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The official title or name of the tender."
+        },
+        "referenceNumber": {
+          "type": "string",
+          "description": "A unique reference or identification number assigned to the tender by the issuing authority."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description or summary of the tender's purpose and scope."
+        },
+        "publicationDate": {
+          "type": "string",
+          "description": "The date and time when the tender was officially published.",
+          "format": "date-time"
+        },
+        "submissionDeadline": {
+          "type": "string",
+          "description": "The final date and time for bidders to submit their proposals.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the tender (e.g., Draft, Open, Closed, Archived)."
+        },
+        "createdDateTime": {
+          "type": "string",
+          "description": "The date and time when this tender record was created in the system.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "referenceNumber",
+        "publicationDate",
+        "submissionDeadline",
+        "status",
+        "createdDateTime"
+      ]
+    },
+    "Bidder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bidder",
+      "type": "object",
+      "description": "Represents a company or entity that submits bids for government tenders.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Bidder entity."
+        },
+        "companyName": {
+          "type": "string",
+          "description": "The legal name of the bidding company or entity."
+        },
+        "registrationNumber": {
+          "type": "string",
+          "description": "The official registration number of the company (e.g., CIN, ABN)."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "The primary contact email address for the bidder.",
+          "format": "email"
+        },
+        "contactPhone": {
+          "type": "string",
+          "description": "The primary contact phone number for the bidder."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical mailing address of the bidder's company."
+        },
+        "onboardedDateTime": {
+          "type": "string",
+          "description": "The date and time when the bidder was added or onboarded into the system.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "companyName",
+        "registrationNumber",
+        "contactEmail",
+        "onboardedDateTime"
+      ]
+    },
+    "TenderDocument": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TenderDocument",
+      "type": "object",
+      "description": "Represents a specific file uploaded as part of a tender's official documentation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TenderDocument entity."
+        },
+        "tenderId": {
+          "type": "string",
+          "description": "Reference to the Tender this document belongs to. (Relationship: Tender 1:N TenderDocument)"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "The original name of the uploaded file."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "The type of the file (e.g., PDF, JPEG, PNG)."
+        },
+        "storageUrl": {
+          "type": "string",
+          "description": "The URL or path where the document is securely stored.",
+          "format": "uri"
+        },
+        "uploadedDateTime": {
+          "type": "string",
+          "description": "The date and time when the document was uploaded to the system.",
+          "format": "date-time"
+        },
+        "processingStatus": {
+          "type": "string",
+          "description": "The current processing status of the document (e.g., Uploaded, OCR_Processed, Criteria_Extracted, Failed)."
+        },
+        "extractedText": {
+          "type": "string",
+          "description": "The full text content extracted from the document using OCR/NLP, if available."
+        }
+      },
+      "required": [
+        "id",
+        "tenderId",
+        "fileName",
+        "fileType",
+        "storageUrl",
+        "uploadedDateTime",
+        "processingStatus"
+      ]
+    },
+    "BidderSubmissionDocument": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BidderSubmissionDocument",
+      "type": "object",
+      "description": "Represents a specific file uploaded by a bidder as part of their submission for a particular tender.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BidderSubmissionDocument entity."
+        },
+        "bidderId": {
+          "type": "string",
+          "description": "Reference to the Bidder who submitted this document. (Relationship: Bidder 1:N BidderSubmissionDocument)"
+        },
+        "tenderId": {
+          "type": "string",
+          "description": "Reference to the Tender for which this document was submitted. (Relationship: Tender 1:N BidderSubmissionDocument)"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "The original name of the uploaded file."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "The type of the file (e.g., PDF, JPEG, PNG)."
+        },
+        "storageUrl": {
+          "type": "string",
+          "description": "The URL or path where the bidder's document is securely stored.",
+          "format": "uri"
+        },
+        "uploadedDateTime": {
+          "type": "string",
+          "description": "The date and time when the bidder's document was uploaded to the system.",
+          "format": "date-time"
+        },
+        "processingStatus": {
+          "type": "string",
+          "description": "The current processing status of the bidder's document (e.g., Uploaded, OCR_Processed, Data_Extracted, Failed)."
+        },
+        "extractedText": {
+          "type": "string",
+          "description": "The full text content extracted from the bidder's document using OCR/NLP, if available."
+        }
+      },
+      "required": [
+        "id",
+        "bidderId",
+        "tenderId",
+        "fileName",
+        "fileType",
+        "storageUrl",
+        "uploadedDateTime",
+        "processingStatus"
+      ]
+    },
+    "TenderCriterion": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TenderCriterion",
+      "type": "object",
+      "description": "Represents an individual eligibility criterion extracted from a tender document.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TenderCriterion entity."
+        },
+        "tenderId": {
+          "type": "string",
+          "description": "Reference to the Tender from which this criterion was extracted. (Relationship: Tender 1:N TenderCriterion)"
+        },
+        "criterionText": {
+          "type": "string",
+          "description": "The full, exact text of the eligibility requirement as stated in the tender document."
+        },
+        "category": {
+          "type": "string",
+          "description": "The classification of the criterion (e.g., Technical, Financial, Compliance)."
+        },
+        "isMandatory": {
+          "type": "boolean",
+          "description": "Indicates whether satisfying this criterion is mandatory for eligibility (true) or optional (false)."
+        },
+        "requiredValue": {
+          "type": "string",
+          "description": "The specific value or condition required by the criterion (e.g., '₹5 crore', 'ISO 9001', '3 projects')."
+        },
+        "timeConstraint": {
+          "type": "string",
+          "description": "Any time-related constraint for the criterion (e.g., 'last 5 years', 'within 2 years')."
+        },
+        "requiredDocumentTypes": {
+          "type": "array",
+          "description": "A list of types of documents (e.g., 'Certificates', 'Balance Sheets') explicitly mentioned as required for this criterion.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sourceDocumentId": {
+          "type": "string",
+          "description": "Reference to the TenderDocument from which this criterion was extracted. (Relationship: TenderDocument 1:N TenderCriterion)"
+        },
+        "sourcePageReference": {
+          "type": "string",
+          "description": "The page number or section in the source TenderDocument where this criterion was found."
+        },
+        "extractionConfidence": {
+          "type": "number",
+          "description": "A confidence score (0-100) indicating the AI's certainty in extracting this criterion."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the criterion (e.g., Extracted, Reviewed, Approved)."
+        },
+        "extractedDateTime": {
+          "type": "string",
+          "description": "The date and time when this criterion was extracted from the tender document.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "tenderId",
+        "criterionText",
+        "category",
+        "isMandatory",
+        "requiredValue",
+        "sourceDocumentId",
+        "extractionConfidence",
+        "status",
+        "extractedDateTime"
+      ]
+    },
+    "BidderExtractedDataPoint": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BidderExtractedDataPoint",
+      "type": "object",
+      "description": "Represents a single piece of structured data extracted from a bidder's submission document, along with its evidence.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BidderExtractedDataPoint entity."
+        },
+        "bidderId": {
+          "type": "string",
+          "description": "Reference to the Bidder from whose submission this data was extracted. (Relationship: Bidder 1:N BidderExtractedDataPoint)"
+        },
+        "tenderId": {
+          "type": "string",
+          "description": "Reference to the Tender for which this data point was submitted. (Relationship: Tender 1:N BidderExtractedDataPoint)"
+        },
+        "dataType": {
+          "type": "string",
+          "description": "The type of data extracted (e.g., 'Annual Turnover', 'Certification', 'Project Count', 'Registration', 'Other')."
+        },
+        "extractedValue": {
+          "type": "string",
+          "description": "The exact value extracted from the bidder's document (e.g., '₹7 crore', 'ISO 9001:2015')."
+        },
+        "numericValue": {
+          "type": "number",
+          "description": "A numeric representation of the extracted value, if applicable, for easier comparison."
+        },
+        "year": {
+          "type": "number",
+          "description": "The specific year associated with the data point, particularly relevant for annual turnover."
+        },
+        "evidenceSnippet": {
+          "type": "string",
+          "description": "The exact text snippet from the bidder document that serves as evidence for the extracted value."
+        },
+        "sourceDocumentId": {
+          "type": "string",
+          "description": "Reference to the BidderSubmissionDocument from which this data was extracted. (Relationship: BidderSubmissionDocument 1:N BidderExtractedDataPoint)"
+        },
+        "sourcePageReference": {
+          "type": "string",
+          "description": "The page number or section in the source BidderSubmissionDocument where this data was found."
+        },
+        "extractionConfidence": {
+          "type": "number",
+          "description": "A confidence score (0-100) indicating the AI's certainty in extracting this data point."
+        },
+        "extractedDateTime": {
+          "type": "string",
+          "description": "The date and time when this data point was extracted from the bidder's document.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "bidderId",
+        "tenderId",
+        "dataType",
+        "extractedValue",
+        "evidenceSnippet",
+        "sourceDocumentId",
+        "extractionConfidence",
+        "extractedDateTime"
+      ]
+    },
+    "TenderEvaluationSummary": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TenderEvaluationSummary",
+      "type": "object",
+      "description": "Aggregates the overall evaluation results for a specific bidder's submission to a particular tender.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the TenderEvaluationSummary entity."
+        },
+        "tenderId": {
+          "type": "string",
+          "description": "Reference to the Tender being evaluated. (Relationship: Tender 1:N TenderEvaluationSummary)"
+        },
+        "bidderId": {
+          "type": "string",
+          "description": "Reference to the Bidder whose submission is being evaluated. (Relationship: Bidder 1:N TenderEvaluationSummary)"
+        },
+        "overallDecision": {
+          "type": "string",
+          "description": "The final overall decision for the bidder's submission (Eligible, Not Eligible, Needs Review)."
+        },
+        "summaryReason": {
+          "type": "string",
+          "description": "A concise, 2-3 line summary explaining the overall decision."
+        },
+        "riskFlags": {
+          "type": "array",
+          "description": "A list of identified risks or flags (e.g., 'Missing Documents', 'Incomplete Information', 'Suspicious Inconsistencies').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evaluationDateTime": {
+          "type": "string",
+          "description": "The date and time when this overall evaluation was first generated.",
+          "format": "date-time"
+        },
+        "lastReviewedDateTime": {
+          "type": "string",
+          "description": "The date and time when this evaluation summary was last manually reviewed.",
+          "format": "date-time"
+        },
+        "reviewedByUserId": {
+          "type": "string",
+          "description": "Reference to the user who performed the last review of this summary."
+        }
+      },
+      "required": [
+        "id",
+        "tenderId",
+        "bidderId",
+        "overallDecision",
+        "summaryReason",
+        "evaluationDateTime"
+      ]
+    },
+    "CriterionEvaluationResult": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CriterionEvaluationResult",
+      "type": "object",
+      "description": "Represents the AI-powered evaluation of a single tender criterion against a bidder's submitted data.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CriterionEvaluationResult entity."
+        },
+        "tenderEvaluationSummaryId": {
+          "type": "string",
+          "description": "Reference to the overall TenderEvaluationSummary this result contributes to. (Relationship: TenderEvaluationSummary 1:N CriterionEvaluationResult)"
+        },
+        "tenderCriterionId": {
+          "type": "string",
+          "description": "Reference to the specific TenderCriterion that was evaluated. (Relationship: TenderCriterion 1:N CriterionEvaluationResult)"
+        },
+        "requiredValue": {
+          "type": "string",
+          "description": "The value or condition required by the tender criterion."
+        },
+        "bidderValue": {
+          "type": "string",
+          "description": "The value extracted from the bidder's submission that corresponds to the criterion."
+        },
+        "status": {
+          "type": "string",
+          "description": "The evaluation status for this specific criterion (Eligible, Not Eligible, Needs Review)."
+        },
+        "confidenceScore": {
+          "type": "number",
+          "description": "A confidence score (0-100) indicating the AI's certainty in this evaluation decision."
+        },
+        "explanation": {
+          "type": "string",
+          "description": "A clear, human-readable explanation of 'WHY' this evaluation decision was made."
+        },
+        "evidenceBidderText": {
+          "type": "string",
+          "description": "The exact sentence or snippet from the bidder document providing evidence for the bidder's value."
+        },
+        "evidenceBidderDataPointIds": {
+          "type": "array",
+          "description": "References to specific BidderExtractedDataPoint entities that contributed as evidence for this evaluation. (Relationship: BidderExtractedDataPoint N:N CriterionEvaluationResult)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidenceTenderText": {
+          "type": "string",
+          "description": "(Optional) The exact sentence or snippet from the tender document relevant to the criterion."
+        },
+        "reviewStatus": {
+          "type": "string",
+          "description": "The current review status of this specific criterion's evaluation (e.g., Pending, Approved, Rejected)."
+        },
+        "reviewerNotes": {
+          "type": "string",
+          "description": "Any additional notes or comments made by a human reviewer for this criterion."
+        },
+        "lastReviewedDateTime": {
+          "type": "string",
+          "description": "The date and time when this criterion's evaluation was last manually reviewed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "tenderEvaluationSummaryId",
+        "tenderCriterionId",
+        "requiredValue",
+        "bidderValue",
+        "status",
+        "confidenceScore",
+        "explanation",
+        "evidenceBidderText",
+        "evidenceBidderDataPointIds",
+        "reviewStatus"
+      ]
+    },
+    "ReviewActivity": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ReviewActivity",
+      "type": "object",
+      "description": "Logs specific human review actions taken on tender evaluations, individual criterion results, or extracted data points.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ReviewActivity entity."
+        },
+        "tenderEvaluationSummaryId": {
+          "type": "string",
+          "description": "Reference to the overall TenderEvaluationSummary that was reviewed or is associated with this review activity. (Relationship: TenderEvaluationSummary 1:N ReviewActivity)"
+        },
+        "criterionEvaluationResultId": {
+          "type": "string",
+          "description": "Reference to a specific CriterionEvaluationResult that was the subject of this review, if applicable. (Relationship: CriterionEvaluationResult 1:N ReviewActivity)"
+        },
+        "bidderExtractedDataPointId": {
+          "type": "string",
+          "description": "Reference to a specific BidderExtractedDataPoint that was reviewed or edited, if applicable. (Relationship: BidderExtractedDataPoint 1:N ReviewActivity)"
+        },
+        "reviewerId": {
+          "type": "string",
+          "description": "The identifier of the user who performed this review action."
+        },
+        "reviewDateTime": {
+          "type": "string",
+          "description": "The date and time when the review action took place.",
+          "format": "date-time"
+        },
+        "action": {
+          "type": "string",
+          "description": "The type of action performed by the reviewer (e.g., 'Approve', 'Edit', 'Reject', 'Flag', 'Comment')."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Detailed notes or explanation provided by the reviewer for their action."
+        },
+        "originalValue": {
+          "type": "string",
+          "description": "If the action was 'Edit', this stores the value before the edit was applied."
+        },
+        "newValue": {
+          "type": "string",
+          "description": "If the action was 'Edit', this stores the value after the edit was applied."
+        }
+      },
+      "required": [
+        "id",
+        "tenderEvaluationSummaryId",
+        "reviewerId",
+        "reviewDateTime",
+        "action",
+        "notes"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores basic user profiles. While a `User` entity isn't explicitly provided, this path is assumed for core Firebase authentication integration and generic user data. Access is typically restricted to the owning user (`request.auth.uid == userId`)."
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/AdminRole"
+          },
+          "description": "Collection for administrative roles. The existence of a document at this path signifies that the `userId` is an administrator. This enables DBAC (Database-Based Access Control) using existence checks in security rules. Only administrators can write to this collection; all authenticated users can read for rule checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique Firebase Authentication User ID of the administrator."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/bidders/{bidderId}",
+        "definition": {
+          "entityName": "Bidder",
+          "schema": {
+            "$ref": "#/backend/entities/Bidder"
+          },
+          "description": "Stores details for each bidder company. The `bidderId` parameter maps directly to the Firebase Authentication `uid` of the user representing that bidder. Access is restricted such that a bidder can only read/write their own profile. Admins can read all bidder profiles.",
+          "params": [
+            {
+              "name": "bidderId",
+              "description": "The unique identifier for the Bidder company, corresponding to a Firebase User ID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tenders/{tenderId}",
+        "definition": {
+          "entityName": "Tender",
+          "schema": {
+            "$ref": "#/backend/entities/Tender"
+          },
+          "description": "Central collection for government tender documents. Tenders are generally read-only for authenticated users once published ('Open', 'Closed', 'Archived' status). Creation and modification are restricted to users with 'admin' roles. The 'status' field is crucial for QAPs, enabling secure listing of publicly visible tenders.",
+          "params": [
+            {
+              "name": "tenderId",
+              "description": "The unique identifier for a specific Tender."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tenders/{tenderId}/documents/{documentId}",
+        "definition": {
+          "entityName": "TenderDocument",
+          "schema": {
+            "$ref": "#/backend/entities/TenderDocument"
+          },
+          "description": "Subcollection storing files (e.g., PDFs) associated with a specific tender. Access permissions inherit from the parent Tender: read-only for authenticated users who can access the tender, write access for admins.",
+          "params": [
+            {
+              "name": "tenderId",
+              "description": "The unique identifier of the parent Tender."
+            },
+            {
+              "name": "documentId",
+              "description": "The unique identifier for a TenderDocument."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tenders/{tenderId}/criteria/{criterionId}",
+        "definition": {
+          "entityName": "TenderCriterion",
+          "schema": {
+            "$ref": "#/backend/entities/TenderCriterion"
+          },
+          "description": "Subcollection storing eligibility criteria extracted from a specific tender. Access permissions inherit from the parent Tender: read-only for authenticated users, write access for admins.",
+          "params": [
+            {
+              "name": "tenderId",
+              "description": "The unique identifier of the parent Tender."
+            },
+            {
+              "name": "criterionId",
+              "description": "The unique identifier for a TenderCriterion."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/bidderSubmissionDocuments/{submissionDocumentId}",
+        "definition": {
+          "entityName": "BidderSubmissionDocument",
+          "schema": {
+            "$ref": "#/backend/entities/BidderSubmissionDocument"
+          },
+          "description": "Top-level collection for documents submitted by bidders for specific tenders. To ensure Authorization Independence and support QAPs, each document includes denormalized `bidderId` (for ownership, `request.auth.uid`) and `tenderId` (for evaluation context). Bidders can only read/write their own documents; administrators/evaluators can read all.",
+          "params": [
+            {
+              "name": "submissionDocumentId",
+              "description": "The unique identifier for a BidderSubmissionDocument."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/bidderExtractedDataPoints/{dataPointId}",
+        "definition": {
+          "entityName": "BidderExtractedDataPoint",
+          "schema": {
+            "$ref": "#/backend/entities/BidderExtractedDataPoint"
+          },
+          "description": "Top-level collection storing structured data extracted from bidder submission documents. To ensure Authorization Independence and support QAPs, each document includes denormalized `bidderId` (for ownership) and `tenderId` (for evaluation context). Bidders can only read/write their own data points; administrators/evaluators can read all.",
+          "params": [
+            {
+              "name": "dataPointId",
+              "description": "The unique identifier for a BidderExtractedDataPoint."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tenderEvaluationSummaries/{evaluationSummaryId}",
+        "definition": {
+          "entityName": "TenderEvaluationSummary",
+          "schema": {
+            "$ref": "#/backend/entities/TenderEvaluationSummary"
+          },
+          "description": "Top-level collection aggregating overall evaluation results for a bidder's submission to a tender. To ensure Authorization Independence and support QAPs, each document includes denormalized `tenderId` and `bidderId`. Bidders can read their own summaries; administrators can read/write all summaries. The `overallDecision` and `reviewedByUserId` fields are key for audit and state management.",
+          "params": [
+            {
+              "name": "evaluationSummaryId",
+              "description": "The unique identifier for a TenderEvaluationSummary."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tenderEvaluationSummaries/{evaluationSummaryId}/criterionResults/{criterionResultId}",
+        "definition": {
+          "entityName": "CriterionEvaluationResult",
+          "schema": {
+            "$ref": "#/backend/entities/CriterionEvaluationResult"
+          },
+          "description": "Subcollection storing the evaluation results for individual tender criteria against a bidder's data. To ensure Authorization Independence and support flexible QAPs, each document includes denormalized `tenderId` and `bidderId` (copied from the parent summary) in addition to `tenderEvaluationSummaryId`. This allows listing criterion results directly by `tenderId` or `bidderId` without `get()` on the parent. Access is tied to the parent summary: bidders read their own results, and administrators can read/write all.",
+          "params": [
+            {
+              "name": "evaluationSummaryId",
+              "description": "The unique identifier of the parent TenderEvaluationSummary."
+            },
+            {
+              "name": "criterionResultId",
+              "description": "The unique identifier for a CriterionEvaluationResult."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/reviewActivities/{activityId}",
+        "definition": {
+          "entityName": "ReviewActivity",
+          "schema": {
+            "$ref": "#/backend/entities/ReviewActivity"
+          },
+          "description": "Top-level collection for immutable audit logs of human review actions. To ensure Authorization Independence and support QAPs for auditing, each document includes denormalized `tenderId`, `bidderId` (derived from the associated summary/result), and `reviewerId`. Only administrators can read these logs, and they are immutable after creation (no write access).",
+          "params": [
+            {
+              "name": "activityId",
+              "description": "The unique identifier for a ReviewActivity log."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure for Tender Sense AI is designed around the core principles of Authorization Independence, Structural Segregation, and Query as a Privilege (QAPs) to ensure security, scalability, and debuggability. \n\n**Authorization Independence:** This is critically achieved through extensive denormalization. For instance, entities like `BidderSubmissionDocument`, `BidderExtractedDataPoint`, and `TenderEvaluationSummary` are stored in top-level collections. Each document in these collections explicitly includes `bidderId` and `tenderId` as fields, allowing security rules to directly verify ownership (`request.auth.uid == resource.data.bidderId`) or scope (`resource.data.tenderId == '{tenderId}'`) without requiring expensive and insecure `get()` calls to parent documents. Similarly, `CriterionEvaluationResult` documents, while nested under `TenderEvaluationSummary`, also denormalize `tenderId` and `bidderId` to enable independent authorization checks and flexible querying. `ReviewActivity` documents denormalize `tenderId`, `bidderId`, and `reviewerId` to allow direct authorization and auditing without complex lookups. Global roles (e.g., 'admin') are managed via an existence-based collection (`/roles_admin/{uid}`), providing a clear and atomic mechanism for role-based access.\n\n**Structural Segregation & QAPs:** Collections are designed so that all documents within a collection share a homogeneous security posture. \n*   The `/tenders` collection holds all tender documents, with access rules primarily governed by the `status` field (e.g., only 'Open' tenders are broadly readable, 'Draft' tenders are admin-only). This supports QAPs by allowing users to query for 'Open' tenders directly and securely. \n*   User-specific data, such as bidder profiles, is securely segregated under `/bidders/{bidderId}`, ensuring users can only manage their own profile.\n*   Collaborative or cross-entity data, like `bidderSubmissionDocuments` and `tenderEvaluationSummaries`, are placed in top-level collections, always containing the relevant `bidderId` and `tenderId`. This strategy enables efficient `list` operations filtered by either `bidderId` (for a bidder to view all their submissions/evaluations) or `tenderId` (for an administrator/evaluator to view all submissions/evaluations for a specific tender). Firestore rules can then enforce these filters, ensuring that `list` operations never return unauthorized data (Rules are not Filters).\n\n**Clarity and Consistency:** Semantic naming conventions (`{tenderId}`, `{bidderId}`) are used for all wildcards. Explicit `status` fields are utilized across entities (`Tender`, `TenderDocument`, `TenderCriterion`, `TenderEvaluationSummary`, `CriterionEvaluationResult`, `BidderSubmissionDocument`) to clearly model the lifecycle and state, simplifying rule logic and enhancing debuggability. Timestamp fields (`createdDateTime`, `uploadedDateTime`, `evaluationDateTime`, `lastReviewedDateTime`, `reviewDateTime`) are consistently used to maintain data invariants and provide audit trails. This comprehensive approach ensures a robust, secure, and maintainable Firestore architecture for Tender Sense AI."
+  }
+}
