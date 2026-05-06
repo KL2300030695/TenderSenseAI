@@ -33,13 +33,17 @@ import {Badge} from "@/components/ui/badge"
 import {ExplainableDecisionReportingOutput} from "@/ai/flows/explainable-decision-reporting"
 
 export default function ReportPage() {
-  const [data, setData] = useState<{name: string, result: ExplainableDecisionReportingOutput} | null>(null)
+  const [data, setData] = useState<{name: string, result: ExplainableDecisionReportingOutput, timestamp?: string} | null>(null)
+  const [formattedDate, setFormattedDate] = useState<string>("")
   const router = useRouter()
 
   useEffect(() => {
     const lastEval = sessionStorage.getItem('last_evaluation')
     if (lastEval) {
-      setData(JSON.parse(lastEval))
+      const parsed = JSON.parse(lastEval)
+      setData(parsed)
+      const date = parsed.timestamp ? new Date(parsed.timestamp) : new Date()
+      setFormattedDate(date.toLocaleDateString())
     } else {
       router.push("/tenders/new")
     }
@@ -76,7 +80,7 @@ export default function ReportPage() {
             <ArrowLeft className="h-4 w-4" /> Back to Dashboard
           </Button>
           <h1 className="text-3xl font-bold text-primary">{name}</h1>
-          <p className="text-muted-foreground">Evaluation generated on {new Date().toLocaleDateString()}</p>
+          <p className="text-muted-foreground">Evaluation generated on {formattedDate}</p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="gap-2">
