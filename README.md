@@ -78,12 +78,3 @@ Tender Sense AI is designed with **Authorization Independence** and **Auditabili
 -   **Immutable Logs**: Every manual review action is logged as an immutable activity record.
 -   **Secure Processing**: All document analysis is performed within a secure Genkit environment with configured safety filters.
 
----
-
-## 🎨 Design Philosophy
-
-The interface uses a **Deep Professional Blue (#28518A)** and **Light Blue-Grey (#F0F2F4)** palette to evoke trust and government-grade reliability. The **Inter** sans-serif typeface ensures maximum legibility for detailed technical reports.
-
----
-
-Developed with ❤️ using **Firebase Studio**.
