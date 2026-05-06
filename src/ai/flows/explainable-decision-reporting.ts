@@ -1,9 +1,8 @@
 'use server';
 /**
  * @fileOverview This file implements a Genkit flow for Explainable Decision Reporting in TenderSense AI.
- * It extracts eligibility criteria from a tender document, extracts bidder data from a bidder document,
- * evaluates the bidder against the tender criteria, and generates a detailed, auditable report
- * with explanations, confidence scores, and source document references.
+ * It extracts eligibility criteria from a tender document (PDF), extracts bidder data from a bidder document (PDF),
+ * evaluates the bidder against the tender criteria, and generates a detailed, auditable report.
  *
  * - explainableDecisionReporting - The main function to trigger the tender evaluation process.
  * - ExplainableDecisionReportingInput - The input type for the explainableDecisionReporting function.
@@ -15,13 +14,19 @@ import {z} from 'genkit';
 
 /**
  * Schema for the input of the explainableDecisionReporting flow.
- * It includes the unstructured text content of the tender and bidder documents.
+ * It includes the PDF documents as base64 data URIs.
  */
 const ExplainableDecisionReportingInputSchema = z.object({
-  tenderDocumentText:
-    z.string().describe('The unstructured text content extracted from the tender document.'),
-  bidderDocumentText:
-    z.string().describe('The unstructured text content extracted from the bidder submission document.'),
+  tenderPdfUri: z
+    .string()
+    .describe(
+      "The tender document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:application/pdf;base64,<encoded_data>'."
+    ),
+  bidderPdfUri: z
+    .string()
+    .describe(
+      "The bidder document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:application/pdf;base64,<encoded_data>'."
+    ),
 });
 export type ExplainableDecisionReportingInput = z.infer<typeof ExplainableDecisionReportingInputSchema>;
 
@@ -87,14 +92,14 @@ const explainableDecisionReportingPrompt = ai.definePrompt({
   output: {schema: ExplainableDecisionReportingOutputSchema},
   prompt: `You are an expert AI system designed for government-grade tender evaluation and audit. Your goal is to perform a COMPLETE, ACCURATE, and EXPLAINABLE evaluation of a bidder's submission against a tender document.
 
-You will receive the unstructured text content of both a tender document and a bidder document.
+You will receive the PDF content of both a tender document and a bidder document.
 
 Follow these steps strictly to produce your evaluation:
 
 --------------------------------------------------
 STEP 1: CRITERIA EXTRACTION (TENDER UNDERSTANDING)
 --------------------------------------------------
-From the Tender Document provided below, extract ALL eligibility criteria.
+From the Tender Document provided, extract ALL eligibility criteria.
 
 For each criterion:
 - Identify the requirement clearly.
@@ -104,12 +109,12 @@ For each criterion:
 - Also extract: Required documents (certificates, registrations) and Time constraints (e.g., last 5 years). Include these in the 'notes' field.
 
 Tender Document:
-{{{tenderDocumentText}}}
+{{media url=tenderPdfUri}}
 
 --------------------------------------------------
 STEP 2: BIDDER DATA EXTRACTION
 --------------------------------------------------
-From the Bidder Document provided below, extract structured data relevant to the criteria identified in Step 1.
+From the Bidder Document provided, extract structured data relevant to the criteria identified in Step 1.
 
 Extract:
 - Annual turnover (with amount and year if available)
@@ -122,7 +127,7 @@ For each extracted value:
 - Include the EXACT text snippet from the document as evidence in the 'bidder_text' field within the 'evidence' object. If a page reference is available in the original document, include that context; otherwise, include the most relevant sentence.
 
 Bidder Document:
-{{{bidderDocumentText}}}
+{{media url=bidderPdfUri}}
 
 --------------------------------------------------
 STEP 3: MATCHING & EVALUATION
@@ -176,9 +181,7 @@ OUTPUT FORMAT (STRICT JSON ONLY)
 --------------------------------------------------
 Your entire response MUST be a single JSON object conforming exactly to this schema. DO NOT include any additional text or formatting outside of the JSON object.
 
-\`\`\`json
 {{jsonSchema ExplainableDecisionReportingOutputSchema}}
-\`\`\`
 
 --------------------------------------------------
 IMPORTANT CONSTRAINTS

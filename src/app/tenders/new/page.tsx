@@ -1,6 +1,6 @@
 "use client"
 
-import {useState} from "react"
+import {useState, useRef} from "react"
 import {useRouter} from "next/navigation"
 import {
   Card,
@@ -13,30 +13,44 @@ import {
 import {Button} from "@/components/ui/button"
 import {Input} from "@/components/ui/input"
 import {Label} from "@/components/ui/label"
-import {Textarea} from "@/components/ui/textarea"
 import {
   Upload,
   FileUp,
   Loader2,
   CheckCircle2,
   Info,
+  FileText,
+  X,
 } from "lucide-react"
 import {useToast} from "@/hooks/use-toast"
 import {explainableDecisionReporting} from "@/ai/flows/explainable-decision-reporting"
 
 export default function NewEvaluationPage() {
   const [loading, setLoading] = useState(false)
-  const [tenderText, setTenderText] = useState("")
-  const [bidderText, setBidderText] = useState("")
   const [tenderName, setTenderName] = useState("")
+  const [tenderFile, setTenderFile] = useState<File | null>(null)
+  const [bidderFile, setBidderFile] = useState<File | null>(null)
+  
+  const tenderInputRef = useRef<HTMLInputElement>(null)
+  const bidderInputRef = useRef<HTMLInputElement>(null)
+  
   const router = useRouter()
   const {toast} = useToast()
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
+    })
+  }
+
   const handleProcess = async () => {
-    if (!tenderText || !bidderText || !tenderName) {
+    if (!tenderFile || !bidderFile || !tenderName) {
       toast({
         title: "Missing Information",
-        description: "Please provide the tender name and the text content of both documents.",
+        description: "Please provide the tender name and upload both PDF documents.",
         variant: "destructive",
       })
       return
@@ -44,9 +58,12 @@ export default function NewEvaluationPage() {
 
     setLoading(true)
     try {
+      const tenderPdfUri = await fileToBase64(tenderFile)
+      const bidderPdfUri = await fileToBase64(bidderFile)
+
       const result = await explainableDecisionReporting({
-        tenderDocumentText: tenderText,
-        bidderDocumentText: bidderText,
+        tenderPdfUri,
+        bidderPdfUri,
       })
       
       sessionStorage.setItem('last_evaluation', JSON.stringify({
@@ -57,11 +74,12 @@ export default function NewEvaluationPage() {
 
       toast({
         title: "Processing Complete",
-        description: "AI has successfully evaluated the PDF submission.",
+        description: "AI has successfully evaluated the PDF submissions.",
       })
       
       router.push("/tenders/report")
     } catch (error) {
+      console.error(error)
       toast({
         title: "Evaluation Failed",
         description: "There was an error processing the PDF documents. Please try again.",
@@ -69,6 +87,20 @@ export default function NewEvaluationPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'tender' | 'bidder') => {
+    const file = e.target.files?.[0]
+    if (file && file.type === 'application/pdf') {
+      if (type === 'tender') setTenderFile(file)
+      else setBidderFile(file)
+    } else if (file) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a PDF document.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -103,53 +135,93 @@ export default function NewEvaluationPage() {
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Tender Document */}
-          <Card className="flex flex-col">
+          <Card className="flex flex-col border-dashed">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileUp className="h-5 w-5 text-primary" />
                 Tender PDF
               </CardTitle>
-              <CardDescription>Paste the extracted text from the tender PDF.</CardDescription>
+              <CardDescription>Upload the official tender document.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1">
-              <Textarea 
-                placeholder="Paste tender PDF content here..." 
-                className="min-h-[300px] resize-none"
-                value={tenderText}
-                onChange={(e) => setTenderText(e.target.value)}
+            <CardContent className="flex-1 flex flex-col items-center justify-center py-10">
+              {!tenderFile ? (
+                <div 
+                  className="flex flex-col items-center gap-4 cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => tenderInputRef.current?.click()}
+                >
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium">Click to upload PDF</p>
+                    <p className="text-xs text-muted-foreground mt-1">Maximum size: 5MB</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-accent/20 border w-full">
+                  <FileText className="h-10 w-10 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{tenderFile.name}</p>
+                    <p className="text-xs text-muted-foreground">{(tenderFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setTenderFile(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              <input 
+                type="file" 
+                ref={tenderInputRef} 
+                className="hidden" 
+                accept="application/pdf"
+                onChange={(e) => handleFileChange(e, 'tender')}
               />
             </CardContent>
-            <CardFooter>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Upload className="h-3 w-3" />
-                Max size: 5MB (PDF only)
-              </div>
-            </CardFooter>
           </Card>
 
           {/* Bidder Document */}
-          <Card className="flex flex-col">
+          <Card className="flex flex-col border-dashed">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileUp className="h-5 w-5 text-primary" />
                 Bidder PDF
               </CardTitle>
-              <CardDescription>Paste the extracted text from the bidder's PDF.</CardDescription>
+              <CardDescription>Upload the bidder's proposal proposal.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1">
-              <Textarea 
-                placeholder="Paste bidder PDF content here..." 
-                className="min-h-[300px] resize-none"
-                value={bidderText}
-                onChange={(e) => setBidderText(e.target.value)}
+            <CardContent className="flex-1 flex flex-col items-center justify-center py-10">
+              {!bidderFile ? (
+                <div 
+                  className="flex flex-col items-center gap-4 cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => bidderInputRef.current?.click()}
+                >
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium">Click to upload PDF</p>
+                    <p className="text-xs text-muted-foreground mt-1">Maximum size: 10MB</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-accent/20 border w-full">
+                  <FileText className="h-10 w-10 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{bidderFile.name}</p>
+                    <p className="text-xs text-muted-foreground">{(bidderFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setBidderFile(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              <input 
+                type="file" 
+                ref={bidderInputRef} 
+                className="hidden" 
+                accept="application/pdf"
+                onChange={(e) => handleFileChange(e, 'bidder')}
               />
             </CardContent>
-            <CardFooter>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Upload className="h-3 w-3" />
-                Max size: 10MB (PDF only)
-              </div>
-            </CardFooter>
           </Card>
         </div>
 
@@ -159,12 +231,12 @@ export default function NewEvaluationPage() {
             size="lg" 
             className="gap-2" 
             onClick={handleProcess}
-            disabled={loading}
+            disabled={loading || !tenderFile || !bidderFile || !tenderName}
           >
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Processing PDF...
+                Analyzing Documents...
               </>
             ) : (
               <>
