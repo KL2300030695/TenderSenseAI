@@ -30,6 +30,7 @@ import {
   Type,
   Link as LinkIcon,
   Globe,
+  ShieldCheck,
 } from "lucide-react"
 import {useToast} from "@/hooks/use-toast"
 import {explainableDecisionReporting} from "@/ai/flows/explainable-decision-reporting"
@@ -67,7 +68,8 @@ export default function NewEvaluationPage() {
 
   const prepareInput = async (doc: DocumentState) => {
     if (doc.type === 'pdf' && doc.file) {
-      return { type: 'pdf' as const, value: await fileToBase64(doc.file) };
+      const base64 = await fileToBase64(doc.file);
+      return { type: 'pdf' as const, value: base64 };
     } else if (doc.type === 'text') {
       return { type: 'text' as const, value: doc.text };
     } else if (doc.type === 'url') {
