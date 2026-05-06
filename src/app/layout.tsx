@@ -6,19 +6,53 @@ import './globals.css';
 import {SidebarProvider} from '@/components/ui/sidebar';
 import {AppSidebar} from '@/components/layout/app-sidebar';
 import {Toaster} from '@/components/ui/toaster';
-import { FirebaseClientProvider, useAuth, initiateAnonymousSignIn } from '@/firebase';
+import { FirebaseClientProvider, useUser } from '@/firebase';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 function AuthWrapper({ children }: { children: React.ReactNode }) {
-  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const pathname = usePathname();
+  const router = useRouter();
   
-  useEffect(() => {
-    if (auth) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [auth]);
+  const isLoginPage = pathname === '/login';
 
-  return <>{children}</>;
+  useEffect(() => {
+    if (!isUserLoading && !user && !isLoginPage) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, isLoginPage, router]);
+
+  if (isUserLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-sm font-medium text-muted-foreground">Authenticating session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user && !isLoginPage) {
+    return null; // Prevents flash of content while redirecting
+  }
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <AppSidebar />
+        <main className="flex-1 overflow-auto bg-background p-4 md:p-8">
+          {children}
+        </main>
+      </div>
+    </SidebarProvider>
+  );
 }
 
 export default function RootLayout({
@@ -36,14 +70,7 @@ export default function RootLayout({
       <body className="font-body antialiased" suppressHydrationWarning>
         <FirebaseClientProvider>
           <AuthWrapper>
-            <SidebarProvider>
-              <div className="flex min-h-screen w-full">
-                <AppSidebar />
-                <main className="flex-1 overflow-auto bg-background p-4 md:p-8">
-                  {children}
-                </main>
-              </div>
-            </SidebarProvider>
+            {children}
           </AuthWrapper>
         </FirebaseClientProvider>
         <Toaster />
