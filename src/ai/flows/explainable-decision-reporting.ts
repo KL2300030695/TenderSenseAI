@@ -67,7 +67,7 @@ const SummarySchema = z.object({
 });
 
 /**
- * Schema for the output of the explainableDecisionReporting flow.
+ * Schema for the output of the explainable decision reporting flow.
  * This structure provides a complete, accurate, and explainable tender evaluation.
  */
 const ExplainableDecisionReportingOutputSchema = z.object({
@@ -176,9 +176,9 @@ OUTPUT FORMAT (STRICT JSON ONLY)
 --------------------------------------------------
 Your entire response MUST be a single JSON object conforming exactly to this schema. DO NOT include any additional text or formatting outside of the JSON object.
 
-```json
+\`\`\`json
 {{jsonSchema ExplainableDecisionReportingOutputSchema}}
-```
+\`\`\`
 
 --------------------------------------------------
 IMPORTANT CONSTRAINTS
