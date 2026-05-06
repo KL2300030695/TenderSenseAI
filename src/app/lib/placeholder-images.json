@@ -1,0 +1,29 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "analysis-hero",
+      "description": "Abstract data visualization showing document analysis",
+      "imageUrl": "https://picsum.photos/seed/analysis/1200/600",
+      "imageHint": "data analysis"
+    },
+    {
+      "id": "procurement-team",
+      "description": "Professional team reviewing documents",
+      "imageUrl": "https://picsum.photos/seed/team/800/600",
+      "imageHint": "business team"
+    },
+    {
+      "id": "document-audit",
+      "description": "Close up of digital document audit process",
+      "imageUrl": "https://picsum.photos/seed/audit/800/600",
+      "imageHint": "document audit"
+    },
+    {
+      "id": "ai-brain",
+      "description": "Futuristic visualization of artificial intelligence",
+      "imageUrl": "https://picsum.photos/seed/ai/800/600",
+      "imageHint": "artificial intelligence"
+    }
+  ]
+}

@@ -36,7 +36,7 @@ import {
 import {useToast} from "@/hooks/use-toast"
 import {explainableDecisionReporting} from "@/ai/flows/explainable-decision-reporting"
 import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
-import { collection, doc } from "firebase/firestore"
+import { collection } from "firebase/firestore"
 
 type InputType = 'pdf' | 'text' | 'url';
 
@@ -72,25 +72,46 @@ export default function NewEvaluationPage() {
   }
 
   const prepareInput = async (doc: DocumentState) => {
-    if (doc.type === 'pdf' && doc.file) {
+    if (doc.type === 'pdf') {
+      if (!doc.file) return null;
       const base64 = await fileToBase64(doc.file);
       return { type: 'pdf' as const, value: base64 };
     } else if (doc.type === 'text') {
+      if (!doc.text.trim()) return null;
       return { type: 'text' as const, value: doc.text };
     } else if (doc.type === 'url') {
+      if (!doc.url.trim()) return null;
       return { type: 'url' as const, value: doc.url };
     }
     return null;
   }
 
   const handleProcess = async () => {
+    if (!tenderName.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a name for this evaluation.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const tenderInput = await prepareInput(tenderDoc);
     const bidderInput = await prepareInput(bidderDoc);
 
-    if (!tenderInput || !bidderInput || !tenderName) {
+    if (!tenderInput) {
       toast({
-        title: "Missing Information",
-        description: "Please provide the tender name and input both documents.",
+        title: "Tender Source Missing",
+        description: "Please provide the tender source via text, PDF, or URL.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!bidderInput) {
+      toast({
+        title: "Bidder Submission Missing",
+        description: "Please provide the bidder submission via text, PDF, or URL.",
         variant: "destructive",
       })
       return
@@ -103,33 +124,29 @@ export default function NewEvaluationPage() {
         bidderDoc: bidderInput,
       })
       
-      // Store in SessionStorage for immediate report viewing
       sessionStorage.setItem('last_evaluation', JSON.stringify({
         name: tenderName,
         result: result,
         timestamp: new Date().toISOString()
       }))
 
-      // Persist to Firestore if db is available
       if (db) {
         const timestamp = new Date().toISOString();
         const tenderRef = collection(db, "tenders");
         const evaluationRef = collection(db, "tenderEvaluationSummaries");
 
-        // Save Tender metadata
         const tenderData = {
           title: tenderName,
           referenceNumber: `TR-${Math.floor(Math.random() * 10000)}`,
           status: "Active",
           createdDateTime: timestamp,
           publicationDate: timestamp,
-          submissionDeadline: timestamp, // In real app, this would be extracted
-          description: "AI-Generated Evaluation Result"
+          submissionDeadline: timestamp,
+          description: `AI-Generated Evaluation for ${tenderName}`
         };
 
         addDocumentNonBlocking(tenderRef, tenderData).then((docRef) => {
            if (docRef) {
-             // Save Evaluation Summary
              const summaryData = {
                tenderId: docRef.id,
                bidderId: user?.uid || "anonymous",
@@ -144,8 +161,8 @@ export default function NewEvaluationPage() {
       }
 
       toast({
-        title: "Evaluation Saved",
-        description: "Your results have been synced to the database.",
+        title: "Evaluation Successful",
+        description: "Your results have been processed and saved.",
       })
       
       router.push("/tenders/report")
@@ -153,7 +170,7 @@ export default function NewEvaluationPage() {
       console.error(error)
       toast({
         title: "Evaluation Failed",
-        description: "There was an error processing the documents. Please try again.",
+        description: "There was an error processing the documents. Please check your inputs and try again.",
         variant: "destructive",
       })
     } finally {
@@ -198,7 +215,7 @@ export default function NewEvaluationPage() {
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 p-0">
-        <Tabs defaultValue="pdf" className="w-full" onValueChange={(v) => setState(prev => ({ ...prev, type: v as InputType }))}>
+        <Tabs defaultValue={state.type} className="w-full" onValueChange={(v) => setState(prev => ({ ...prev, type: v as InputType }))}>
           <div className="bg-muted/20 p-4 border-b">
             <TabsList className="grid grid-cols-3 w-full max-w-sm mx-auto">
               <TabsTrigger value="text" className="gap-2"><Type className="h-3.5 w-3.5" /> Paste Text</TabsTrigger>
@@ -284,12 +301,11 @@ export default function NewEvaluationPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-20">
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-primary">Add Document</h1>
-        <p className="text-muted-foreground text-lg">Paste content, upload a PDF, or import from a URL. We'll automatically process it and generate a tender evaluation.</p>
+        <h1 className="text-4xl font-extrabold tracking-tight text-primary">New Evaluation</h1>
+        <p className="text-muted-foreground text-lg">Provide your tender source and bidder submission via text, PDF, or URL for a comprehensive AI evaluation.</p>
       </div>
 
       <div className="grid gap-8">
-        {/* Project Context */}
         <Card className="shadow-sm border-2">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -341,7 +357,7 @@ export default function NewEvaluationPage() {
               size="lg" 
               className="gap-2 min-w-[200px] h-14 text-lg font-bold shadow-lg shadow-primary/20" 
               onClick={handleProcess}
-              disabled={loading || !tenderName}
+              disabled={loading}
             >
               {loading ? (
                 <>
@@ -351,7 +367,7 @@ export default function NewEvaluationPage() {
               ) : (
                 <>
                   <CheckCircle2 className="h-5 w-5" />
-                  Add Documents
+                  Start Evaluation
                 </>
               )}
             </Button>
