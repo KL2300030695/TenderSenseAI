@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  ArrowRight,
   TrendingUp,
   PlusCircle,
   ShieldCheck,
@@ -134,7 +133,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-sm font-semibold text-primary">AI Optimization Tip</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Evaluations are 15% faster when bidders upload typed PDFs instead of scanned images.
+                  Evaluations are 30% more accurate when bidders upload high-quality, text-searchable PDFs.
                 </p>
               </div>
             </div>

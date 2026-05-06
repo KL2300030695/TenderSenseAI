@@ -36,7 +36,7 @@ export default function NewEvaluationPage() {
     if (!tenderText || !bidderText || !tenderName) {
       toast({
         title: "Missing Information",
-        description: "Please provide all required fields and document contents.",
+        description: "Please provide the tender name and the text content of both documents.",
         variant: "destructive",
       })
       return
@@ -44,13 +44,11 @@ export default function NewEvaluationPage() {
 
     setLoading(true)
     try {
-      // In a real app, we would store these in a DB. For demo, we just pass to the AI flow.
       const result = await explainableDecisionReporting({
         tenderDocumentText: tenderText,
         bidderDocumentText: bidderText,
       })
       
-      // Store result in session storage for immediate viewing (simplified for scaffold)
       sessionStorage.setItem('last_evaluation', JSON.stringify({
         name: tenderName,
         result: result,
@@ -59,15 +57,14 @@ export default function NewEvaluationPage() {
 
       toast({
         title: "Processing Complete",
-        description: "AI has successfully evaluated the bidder submission.",
+        description: "AI has successfully evaluated the PDF submission.",
       })
       
       router.push("/tenders/report")
     } catch (error) {
-      console.error(error)
       toast({
         title: "Evaluation Failed",
-        description: "There was an error processing the documents. Please try again.",
+        description: "There was an error processing the PDF documents. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -78,8 +75,8 @@ export default function NewEvaluationPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-primary">New AI Evaluation</h1>
-        <p className="text-muted-foreground">Upload your tender and bidder documents to generate an explainable eligibility report.</p>
+        <h1 className="text-3xl font-bold text-primary">New PDF Evaluation</h1>
+        <p className="text-muted-foreground">Upload your tender and bidder PDFs to generate an explainable eligibility report.</p>
       </div>
 
       <div className="grid gap-6">
@@ -110,13 +107,13 @@ export default function NewEvaluationPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileUp className="h-5 w-5 text-primary" />
-                Tender Document
+                Tender PDF
               </CardTitle>
-              <CardDescription>Paste the extracted text from the tender document.</CardDescription>
+              <CardDescription>Paste the extracted text from the tender PDF.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
               <Textarea 
-                placeholder="Paste tender document content here..." 
+                placeholder="Paste tender PDF content here..." 
                 className="min-h-[300px] resize-none"
                 value={tenderText}
                 onChange={(e) => setTenderText(e.target.value)}
@@ -125,7 +122,7 @@ export default function NewEvaluationPage() {
             <CardFooter>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Upload className="h-3 w-3" />
-                Max size: 5MB (PDF/DOCX)
+                Max size: 5MB (PDF only)
               </div>
             </CardFooter>
           </Card>
@@ -135,13 +132,13 @@ export default function NewEvaluationPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileUp className="h-5 w-5 text-primary" />
-                Bidder Submission
+                Bidder PDF
               </CardTitle>
-              <CardDescription>Paste the extracted text from the bidder's submission.</CardDescription>
+              <CardDescription>Paste the extracted text from the bidder's PDF.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
               <Textarea 
-                placeholder="Paste bidder submission content here..." 
+                placeholder="Paste bidder PDF content here..." 
                 className="min-h-[300px] resize-none"
                 value={bidderText}
                 onChange={(e) => setBidderText(e.target.value)}
@@ -150,7 +147,7 @@ export default function NewEvaluationPage() {
             <CardFooter>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Upload className="h-3 w-3" />
-                Max size: 10MB (PDF/Images)
+                Max size: 10MB (PDF only)
               </div>
             </CardFooter>
           </Card>
@@ -167,7 +164,7 @@ export default function NewEvaluationPage() {
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Processing with AI...
+                Processing PDF...
               </>
             ) : (
               <>
