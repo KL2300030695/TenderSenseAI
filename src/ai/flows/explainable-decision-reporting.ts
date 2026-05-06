@@ -81,11 +81,19 @@ const ExplainableDecisionReportingOutputSchema = z.object({
 export type ExplainableDecisionReportingOutput = z.infer<typeof ExplainableDecisionReportingOutputSchema>;
 
 /**
+ * Schema for internal prompt input, including logic flags to avoid Handlebars complexity.
+ */
+const PromptInputSchema = ExplainableDecisionReportingInputSchema.extend({
+  isTenderPdf: z.boolean(),
+  isBidderPdf: z.boolean(),
+});
+
+/**
  * Defines the prompt for the explainable decision reporting AI.
  */
 const explainableDecisionReportingPrompt = ai.definePrompt({
   name: 'explainableDecisionReportingPrompt',
-  input: {schema: ExplainableDecisionReportingInputSchema},
+  input: {schema: PromptInputSchema},
   output: {schema: ExplainableDecisionReportingOutputSchema},
   prompt: `You are an expert AI system designed for government-grade tender evaluation and audit. Your goal is to perform a COMPLETE, ACCURATE, and EXPLAINABLE evaluation of a bidder's submission against a tender document.
 
@@ -101,7 +109,7 @@ From the Tender Document provided, extract ALL eligibility criteria.
 - Determine if it's Mandatory (default TRUE) or Optional.
 
 Tender Document:
-{{#if (eq tenderDoc.type 'pdf')}}
+{{#if isTenderPdf}}
 {{media url=tenderDoc.value}}
 {{else}}
 {{{tenderDoc.value}}}
@@ -113,7 +121,7 @@ STEP 2: BIDDER DATA EXTRACTION
 From the Bidder Document provided, extract structured data relevant to the criteria identified in Step 1.
 
 Bidder Document:
-{{#if (eq bidderDoc.type 'pdf')}}
+{{#if isBidderPdf}}
 {{media url=bidderDoc.value}}
 {{else}}
 {{{bidderDoc.value}}}
@@ -158,7 +166,14 @@ const explainableDecisionReportingFlow = ai.defineFlow(
     outputSchema: ExplainableDecisionReportingOutputSchema,
   },
   async (input) => {
-    const {output} = await explainableDecisionReportingPrompt(input);
+    // Pre-calculate logic flags to keep the Handlebars template logic-less
+    const promptInput = {
+      ...input,
+      isTenderPdf: input.tenderDoc.type === 'pdf',
+      isBidderPdf: input.bidderDoc.type === 'pdf',
+    };
+    
+    const {output} = await explainableDecisionReportingPrompt(promptInput);
     return output!;
   }
 );
