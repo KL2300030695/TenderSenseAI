@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldCheck, Loader2, Mail } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user && !isUserLoading) {
@@ -35,8 +37,12 @@ export default function LoginPage() {
       } else {
         initiateEmailSignIn(auth, email, password);
       }
-    } catch (error) {
-      console.error("Auth error:", error);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Error",
+        description: error.message || "Failed to sign in. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -44,7 +50,15 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = () => {
     if (!auth) return;
-    initiateGoogleSignIn(auth);
+    try {
+      initiateGoogleSignIn(auth);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Google Sign-In Error",
+        description: error.message || "Could not initialize Google sign-in.",
+      });
+    }
   };
 
   if (isUserLoading) {
